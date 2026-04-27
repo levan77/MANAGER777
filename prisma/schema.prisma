@@ -28,6 +28,16 @@ enum AppointmentSource {
   WALK_IN
 }
 
+enum DayOfWeek {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Salon {
@@ -42,6 +52,8 @@ model Salon {
   staff        Staff[]
   services     Service[]
   appointments Appointment[]
+  workingHours WorkingHours[]
+  timeOffs     TimeOff[]
 }
 
 model User {
@@ -69,6 +81,8 @@ model Staff {
   salon   Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
 
   appointments Appointment[]
+  workingHours WorkingHours[]
+  timeOffs     TimeOff[]
 }
 
 model Service {
@@ -104,4 +118,34 @@ model Appointment {
 
   serviceId String
   service   Service @relation(fields: [serviceId], references: [id])
+}
+
+// Each row represents one day a staff member is scheduled to work.
+// @@unique enforces one entry per (staff, day) — no split-shift modelling.
+model WorkingHours {
+  id          String    @id @default(cuid())
+  day_of_week DayOfWeek
+  start_time  String    // "HH:MM" 24-hour, e.g. "09:00"
+  end_time    String    // "HH:MM" 24-hour, e.g. "18:00"
+
+  staffId String
+  staff   Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  salonId String
+  salon   Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, day_of_week])
+}
+
+// Covers both short recurring breaks (lunch) and multi-day absences (vacation).
+model TimeOff {
+  id             String   @id @default(cuid())
+  start_datetime DateTime
+  end_datetime   DateTime
+
+  staffId String
+  staff   Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  salonId String
+  salon   Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
 }

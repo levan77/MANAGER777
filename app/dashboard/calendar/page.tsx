@@ -347,7 +347,7 @@ export default function CalendarPage() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
 
       {/* ── Top bar ── */}
       <header className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100">

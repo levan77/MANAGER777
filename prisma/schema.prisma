@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  CLIENT
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentSource {
+  ONLINE
+  PHONE
+  WALK_IN
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Salon {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  custom_domain String?  @unique
+  created_at    DateTime @default(now())
+
+  // back-relations
+  users        User[]
+  staff        Staff[]
+  services     Service[]
+  appointments Appointment[]
+}
+
+model User {
+  id      String   @id @default(cuid())
+  email   String
+  role    UserRole @default(CLIENT)
+
+  // multi-tenancy anchor
+  salonId String
+  salon   Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  appointments Appointment[]
+
+  // same email can exist across different salons; unique within a tenant
+  @@unique([email, salonId])
+}
+
+model Staff {
+  id   String @id @default(cuid())
+  name String
+  role String
+
+  // multi-tenancy anchor
+  salonId String
+  salon   Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  appointments Appointment[]
+}
+
+model Service {
+  id               String  @id @default(cuid())
+  name             String
+  duration_minutes Int
+  price            Decimal @db.Decimal(10, 2)
+
+  // multi-tenancy anchor
+  salonId String
+  salon   Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  appointments Appointment[]
+}
+
+model Appointment {
+  id         String            @id @default(cuid())
+  start_time DateTime
+  end_time   DateTime
+  status     AppointmentStatus @default(PENDING)
+  source     AppointmentSource
+
+  // multi-tenancy anchor
+  salonId String
+  salon   Salon  @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  // appointment participants
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+
+  staffId   String
+  staff     Staff   @relation(fields: [staffId], references: [id])
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+}

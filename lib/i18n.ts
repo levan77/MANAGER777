@@ -1,4 +1,4 @@
-export type Lang = "ka" | "ru";
+export type Lang = "ka" | "ru" | "en";
 
 export type Dict = {
   bookAppointment: string;
@@ -90,5 +90,35 @@ const RU: Dict = {
   min:              "мин",
 };
 
-export const TRANSLATIONS: Record<Lang, Dict> = { ka: KA, ru: RU };
-export const LANG_LOCALE: Record<Lang, string> = { ka: "ka-GE", ru: "ru-RU" };
+const EN: Dict = {
+  bookAppointment:  "Book an Appointment",
+  reserveSteps:     "Reserve your session in just a few steps.",
+  stepService:      "Service",
+  stepStylist:      "Stylist",
+  stepSchedule:     "Schedule",
+  chooseService:    "Choose a service",
+  chooseServiceSub: "Select the treatment you'd like to book.",
+  chooseStylist:    "Choose a stylist",
+  chooseStylistSub: "Pick who you'd like to work with.",
+  anyAvailable:     "Any Available",
+  anyAvailableRole: "First available specialist",
+  availableFor:     "Available specialists:",
+  pickDateTime:     "Pick a date & time",
+  pickDateTimeSub:  "All times shown in your local timezone.",
+  availableTimes:   "Available Times",
+  selectDateFirst:  "Select a date to see available times",
+  bookingSummary:   "Booking Summary",
+  labelService:     "Service",
+  labelStylist:     "Stylist",
+  labelDate:        "Date",
+  labelTime:        "Time",
+  labelDuration:    "Duration",
+  labelTotal:       "Total",
+  back:             "Back",
+  continue:         "Continue",
+  confirmBooking:   "Confirm Booking",
+  min:              "min",
+};
+
+export const TRANSLATIONS: Record<Lang, Dict> = { ka: KA, ru: RU, en: EN };
+export const LANG_LOCALE: Record<Lang, string> = { ka: "ka-GE", ru: "ru-RU", en: "en-US" };

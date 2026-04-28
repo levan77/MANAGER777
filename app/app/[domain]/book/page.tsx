@@ -37,23 +37,23 @@ function StepIndicator({
   ];
 
   return (
-    <div className="flex items-start justify-center mb-10">
+    <div className="flex items-start justify-center mb-8">
       {steps.map((step, idx) => {
         const isComplete = current > step.id;
-        const isActive = current === step.id;
+        const isActive   = current === step.id;
         return (
           <div key={step.id} className="flex items-start">
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-1.5">
               <div
                 className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300",
+                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300",
                   isComplete || isActive
                     ? "bg-[#1F1F1F] text-white"
                     : "bg-gray-100 text-gray-400",
                   isActive && "ring-4 ring-[#1F1F1F]/10"
                 )}
               >
-                {isComplete ? <Check className="w-3 h-3" strokeWidth={3} /> : step.id}
+                {isComplete ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : step.id}
               </div>
               <span
                 className={cn(
@@ -67,7 +67,7 @@ function StepIndicator({
             {idx < steps.length - 1 && (
               <div
                 className={cn(
-                  "h-px w-12 sm:w-16 mx-2 mt-3.5 transition-all duration-300",
+                  "h-px w-12 sm:w-16 mx-2 mt-4 transition-all duration-300",
                   current > step.id ? "bg-[#1F1F1F]" : "bg-gray-200"
                 )}
               />
@@ -83,13 +83,13 @@ function StepIndicator({
 
 function LangToggle({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 p-0.5">
-      {(["ka", "ru"] as Lang[]).map((l) => (
+    <div className="flex items-center gap-0.5 rounded-xl border border-gray-200 p-0.5">
+      {(["ka", "ru", "en"] as Lang[]).map((l) => (
         <button
           key={l}
           onClick={() => setLang(l)}
           className={cn(
-            "px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide transition-colors",
+            "px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-colors min-w-[36px]",
             lang === l
               ? "bg-[#1F1F1F] text-white"
               : "text-gray-400 hover:text-[#1F1F1F]"
@@ -111,10 +111,10 @@ export default function BookPage({
 }) {
   const { domain } = use(params);
 
-  const [lang, setLang] = useState<Lang>("ka");
-  const t = TRANSLATIONS[lang];
+  const [lang, setLang]               = useState<Lang>("ka");
+  const t                             = TRANSLATIONS[lang];
 
-  const [step, setStep] = useState(1);
+  const [step, setStep]               = useState(1);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedStaff, setSelectedStaff]     = useState<string | null>(null);
   const [selectedDate, setSelectedDate]       = useState<Date | undefined>(undefined);
@@ -126,7 +126,6 @@ export default function BookPage({
     ? { name: t.anyAvailable }
     : STAFF.find((s) => s.id === selectedStaff);
 
-  // Staff who can perform the selected service
   const eligibleStaff = selectedService
     ? STAFF.filter((s) => s.serviceIds.includes(selectedService))
     : STAFF;
@@ -138,7 +137,6 @@ export default function BookPage({
 
   function handleServiceSelect(id: string) {
     setSelectedService(id);
-    // Reset staff if no longer eligible
     if (selectedStaff && selectedStaff !== "any") {
       const still = STAFF.find((s) => s.id === selectedStaff);
       if (still && !still.serviceIds.includes(id)) setSelectedStaff(null);
@@ -147,18 +145,19 @@ export default function BookPage({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-2xl mx-auto px-5 py-12 sm:py-16 sm:px-8">
+      {/* extra bottom padding on mobile so content clears the sticky nav */}
+      <div className="max-w-2xl mx-auto px-4 pt-10 pb-28 sm:px-8 sm:py-16">
 
         {/* ── Page Header ── */}
-        <div className="flex items-start justify-between mb-10">
+        <div className="flex items-start justify-between mb-8">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-gray-400 mb-2">
+            <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-gray-400 mb-1.5">
               {domain}
             </p>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1F1F1F]">
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1F1F1F]">
               {t.bookAppointment}
             </h1>
-            <p className="mt-1.5 text-sm text-gray-500">{t.reserveSteps}</p>
+            <p className="mt-1 text-sm text-gray-500">{t.reserveSteps}</p>
           </div>
           <LangToggle lang={lang} setLang={setLang} />
         </div>
@@ -185,7 +184,7 @@ export default function BookPage({
                     key={service.id}
                     onClick={() => handleServiceSelect(service.id)}
                     className={cn(
-                      "relative w-full text-left p-5 rounded-2xl border transition-all duration-150",
+                      "relative w-full text-left p-5 rounded-2xl border transition-all duration-150 active:scale-[0.99]",
                       isSelected
                         ? "border-[#1F1F1F] bg-gray-50 shadow-sm"
                         : "border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white"
@@ -218,12 +217,12 @@ export default function BookPage({
           <div>
             {/* Selected service pill */}
             {chosenService && (
-              <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 w-fit text-xs text-gray-500">
+              <div className="inline-flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs text-gray-500">
                 <Clock className="w-3 h-3 text-gray-400 shrink-0" />
                 <span className="font-medium text-[#1F1F1F]">{chosenService.name}</span>
-                <span className="text-gray-400">·</span>
+                <span className="text-gray-300">·</span>
                 <span>{fmtDuration(chosenService.duration, t.min)}</span>
-                <span className="text-gray-400">·</span>
+                <span className="text-gray-300">·</span>
                 <span className="font-semibold text-[#1F1F1F]">${chosenService.price}</span>
               </div>
             )}
@@ -238,14 +237,14 @@ export default function BookPage({
               <button
                 onClick={() => { setSelectedStaff("any"); setShowEligible(false); }}
                 className={cn(
-                  "w-full text-left rounded-2xl border px-4 py-3.5 transition-all duration-150",
+                  "w-full text-left rounded-2xl border px-4 py-4 transition-all duration-150 active:scale-[0.99]",
                   selectedStaff === "any"
                     ? "border-[#1F1F1F] bg-gray-50 shadow-sm"
                     : "border-gray-200 hover:border-gray-300 bg-white"
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-base select-none shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-base select-none shrink-0">
                     ✦
                   </div>
                   <div className="flex-1 min-w-0">
@@ -265,7 +264,7 @@ export default function BookPage({
                 <div className="mt-2 rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
                   <button
                     onClick={() => setShowEligible((v) => !v)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-xs text-gray-500 hover:text-[#1F1F1F] transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3 text-xs text-gray-500 hover:text-[#1F1F1F] transition-colors"
                   >
                     <span>
                       {t.availableFor}{" "}
@@ -273,7 +272,7 @@ export default function BookPage({
                     </span>
                     <ChevronDown
                       className={cn(
-                        "w-3.5 h-3.5 transition-transform duration-200",
+                        "w-4 h-4 transition-transform duration-200",
                         showEligible && "rotate-180"
                       )}
                     />
@@ -283,9 +282,9 @@ export default function BookPage({
                       {eligibleStaff.map((member) => (
                         <div
                           key={member.id}
-                          className="flex items-center gap-2 rounded-lg bg-white border border-gray-200 px-2.5 py-1.5"
+                          className="flex items-center gap-2 rounded-xl bg-white border border-gray-200 px-3 py-2"
                         >
-                          <div className="w-6 h-6 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-[10px] font-semibold shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-[10px] font-semibold shrink-0">
                             {member.initials}
                           </div>
                           <div>
@@ -300,8 +299,8 @@ export default function BookPage({
               )}
             </div>
 
-            {/* Eligible specific stylists */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-1">
+            {/* Specific stylists */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {eligibleStaff.map((member) => {
                 const isSelected = selectedStaff === member.id;
                 return (
@@ -309,7 +308,7 @@ export default function BookPage({
                     key={member.id}
                     onClick={() => { setSelectedStaff(member.id); setShowEligible(false); }}
                     className={cn(
-                      "relative flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-150",
+                      "relative flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-150 active:scale-[0.98]",
                       isSelected
                         ? "border-[#1F1F1F] bg-gray-50 shadow-sm"
                         : "border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white"
@@ -320,7 +319,7 @@ export default function BookPage({
                         <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                       </span>
                     )}
-                    <div className="w-10 h-10 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-xs font-semibold select-none">
+                    <div className="w-11 h-11 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-xs font-semibold select-none">
                       {member.initials}
                     </div>
                     <div className="text-center">
@@ -342,9 +341,9 @@ export default function BookPage({
               <p className="text-sm text-gray-500 mt-0.5">{t.pickDateTimeSub}</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-6">
+            <div className="flex flex-col sm:flex-row gap-5">
               {/* Calendar */}
-              <div className="shrink-0">
+              <div className="shrink-0 flex justify-center sm:block">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -361,9 +360,10 @@ export default function BookPage({
                     <p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-gray-400 mb-3">
                       {t.availableTimes}
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    {/* 2 cols on mobile, 3 on sm+ */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {TIME_SLOTS.map((slot) => {
-                        const booked = BOOKED_SLOTS.has(slot);
+                        const booked     = BOOKED_SLOTS.has(slot);
                         const isSelected = selectedTime === slot;
                         return (
                           <button
@@ -371,12 +371,12 @@ export default function BookPage({
                             disabled={booked}
                             onClick={() => setSelectedTime(slot)}
                             className={cn(
-                              "py-2.5 text-sm rounded-xl border font-medium transition-all duration-150",
+                              "py-3 text-sm rounded-xl border font-medium transition-all duration-150 min-h-[48px]",
                               booked
                                 ? "border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed"
                                 : isSelected
                                 ? "border-[#1F1F1F] bg-[#1F1F1F] text-white"
-                                : "border-gray-200 text-gray-700 hover:border-gray-400 bg-white"
+                                : "border-gray-200 text-gray-700 hover:border-gray-400 bg-white active:scale-95"
                             )}
                           >
                             {slot}
@@ -386,8 +386,8 @@ export default function BookPage({
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center justify-center h-full min-h-[180px] rounded-2xl border border-dashed border-gray-200">
-                    <p className="text-sm text-gray-400">{t.selectDateFirst}</p>
+                  <div className="flex items-center justify-center h-full min-h-[160px] rounded-2xl border border-dashed border-gray-200">
+                    <p className="text-sm text-gray-400 text-center px-4">{t.selectDateFirst}</p>
                   </div>
                 )}
               </div>
@@ -395,7 +395,7 @@ export default function BookPage({
 
             {/* Booking Summary */}
             {chosenService && chosenStaff && selectedDate && selectedTime && (
-              <div className="mt-8 p-5 rounded-2xl bg-gray-50 border border-gray-100">
+              <div className="mt-6 p-5 rounded-2xl bg-gray-50 border border-gray-100">
                 <p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-gray-400 mb-4">
                   {t.bookingSummary}
                 </p>
@@ -407,16 +407,16 @@ export default function BookPage({
                       t.labelDate,
                       selectedDate.toLocaleDateString(LANG_LOCALE[lang], {
                         weekday: "short",
-                        month: "long",
-                        day: "numeric",
+                        month:   "long",
+                        day:     "numeric",
                       }),
                     ],
                     [t.labelTime,     selectedTime],
                     [t.labelDuration, fmtDuration(chosenService.duration, t.min)],
                   ].map(([label, value]) => (
-                    <div key={label} className="flex justify-between">
-                      <span className="text-gray-500">{label}</span>
-                      <span className="text-[#1F1F1F] font-medium">{value}</span>
+                    <div key={label} className="flex justify-between gap-4">
+                      <span className="text-gray-500 shrink-0">{label}</span>
+                      <span className="text-[#1F1F1F] font-medium text-right">{value}</span>
                     </div>
                   ))}
                   <div className="pt-3 mt-1 border-t border-gray-200 flex justify-between font-semibold text-[#1F1F1F]">
@@ -428,37 +428,44 @@ export default function BookPage({
             )}
           </div>
         )}
+      </div>
 
-        {/* ── Navigation ── */}
-        <div className={cn("flex mt-10", step > 1 ? "justify-between" : "justify-end")}>
-          {step > 1 && (
-            <Button
-              variant="ghost"
-              onClick={() => setStep((s) => s - 1)}
-              className="text-gray-500 hover:text-[#1F1F1F] hover:bg-gray-100 rounded-xl px-5"
-            >
-              {t.back}
-            </Button>
-          )}
+      {/* ── Sticky bottom navigation (fixed on mobile, static on desktop) ── */}
+      <div
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-10 bg-white border-t border-gray-100 px-4 py-4",
+          "sm:static sm:bg-transparent sm:border-t-0 sm:px-0 sm:pb-16 sm:-mt-2",
+          "max-w-full sm:max-w-2xl sm:mx-auto",
+          "flex",
+          step > 1 ? "justify-between gap-3" : "justify-end"
+        )}
+      >
+        {step > 1 && (
+          <Button
+            variant="ghost"
+            onClick={() => setStep((s) => s - 1)}
+            className="flex-1 sm:flex-none h-12 sm:h-10 text-gray-500 hover:text-[#1F1F1F] hover:bg-gray-100 rounded-xl px-5 text-sm"
+          >
+            {t.back}
+          </Button>
+        )}
 
-          {step < 3 ? (
-            <Button
-              disabled={!canAdvance}
-              onClick={() => setStep((s) => s + 1)}
-              className="bg-[#1F1F1F] hover:bg-[#333] disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl px-8 font-medium transition-all"
-            >
-              {t.continue}
-            </Button>
-          ) : (
-            <Button
-              disabled={!canAdvance}
-              className="bg-[#1F1F1F] hover:bg-[#333] disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl px-8 font-medium transition-all"
-            >
-              {t.confirmBooking}
-            </Button>
-          )}
-        </div>
-
+        {step < 3 ? (
+          <Button
+            disabled={!canAdvance}
+            onClick={() => setStep((s) => s + 1)}
+            className="flex-1 sm:flex-none h-12 sm:h-10 bg-[#1F1F1F] hover:bg-[#333] disabled:bg-gray-100 disabled:text-gray-400 text-white rounded-xl px-8 font-medium transition-all text-sm"
+          >
+            {t.continue}
+          </Button>
+        ) : (
+          <Button
+            disabled={!canAdvance}
+            className="flex-1 sm:flex-none h-12 sm:h-10 bg-[#1F1F1F] hover:bg-[#333] disabled:bg-gray-100 disabled:text-gray-400 text-white rounded-xl px-8 font-medium transition-all text-sm"
+          >
+            {t.confirmBooking}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Users, Scissors, LogOut } from "lucide-react";
+import { CalendarDays, Users, Scissors, LogOut, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -10,6 +10,9 @@ const NAV = [
   { href: "/dashboard/staff",    label: "Staff",      icon: Users },
   { href: "/dashboard/services", label: "Services",   icon: Scissors },
 ];
+
+// In production this comes from the authenticated salon's slug/domain.
+const PREVIEW_HREF = "/app/demo-salon/book";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -61,6 +64,24 @@ export function DashboardSidebar() {
       {/* Nav links */}
       <nav className="flex sm:flex-col flex-1 items-center sm:items-stretch px-3 sm:px-3 sm:py-4 gap-1 overflow-x-auto sm:overflow-visible">
         {NAV.map(({ href, label, icon: Icon }) => navItem(href, label, Icon))}
+
+        {/* Divider — desktop only */}
+        <div className="hidden sm:block my-2 border-t border-gray-100" />
+
+        {/* Preview booking page */}
+        <a
+          href={PREVIEW_HREF}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            "flex-1 justify-center sm:flex-none sm:justify-start",
+            "text-gray-500 hover:bg-gray-50 hover:text-[#1F1F1F]"
+          )}
+        >
+          <ExternalLink className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+          <span className="hidden sm:inline">Booking page</span>
+        </a>
       </nav>
 
       {/* Bottom: salon info + sign-out (desktop only) */}

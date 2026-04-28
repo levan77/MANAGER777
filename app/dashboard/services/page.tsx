@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Pencil, Clock } from "lucide-react";
+import { Plus, Trash2, Pencil, Clock, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, fmtDuration } from "@/lib/utils";
 import { STAFF } from "@/lib/mock-data";
+import { Input } from "@/components/ui/input";
+
+const STAFF_MAP = Object.fromEntries(STAFF.map((s) => [s.id, s]));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,29 +36,6 @@ const INITIAL_SERVICES: Service[] = [
   { id: "5", name: "Color Touch-Up",    duration_minutes: 60,  price: 85,  staffIds: ["2", "3"] },
   { id: "6", name: "Keratin Treatment", duration_minutes: 120, price: 220, staffIds: ["1", "2", "3", "4"] },
 ];
-
-function fmtDuration(mins: number): string {
-  if (mins < 60) return `${mins} min`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
-}
-
-// ─── Input ────────────────────────────────────────────────────────────────────
-
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={cn(
-        "w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-[#1F1F1F]",
-        "placeholder:text-gray-300",
-        "focus:outline-none focus:ring-2 focus:ring-[#1F1F1F]/10 focus:border-gray-400",
-        "transition-colors"
-      )}
-      {...props}
-    />
-  );
-}
 
 // ─── Empty form state ─────────────────────────────────────────────────────────
 
@@ -178,7 +158,7 @@ export default function ServicesPage() {
         ) : (
           <div className="rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
             {services.map((svc) => {
-              const assignedStaff = STAFF.filter((s) => svc.staffIds.includes(s.id));
+              const assignedStaff = svc.staffIds.map((id) => STAFF_MAP[id]).filter(Boolean);
               return (
                 <div key={svc.id} className="flex items-center gap-4 px-5 py-4 bg-white group">
                   {/* Info */}
@@ -331,11 +311,7 @@ export default function ServicesPage() {
                           checked ? "bg-[#1F1F1F] border-[#1F1F1F]" : "border-gray-300"
                         )}
                       >
-                        {checked && (
-                          <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
-                            <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
+                        {checked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />}
                       </div>
                       <div className="w-6 h-6 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-[10px] font-semibold shrink-0">
                         {member.initials}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2, CalendarDays, Pencil } from "lucide-react";
+import { Plus, Trash2, CalendarDays, Pencil, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SERVICES, STAFF as INITIAL_STAFF_DATA } from "@/lib/mock-data";
+import { Input } from "@/components/ui/input";
+
+const SERVICE_MAP = Object.fromEntries(SERVICES.map((s) => [s.id, s]));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,29 +27,13 @@ type StaffMember = {
   serviceIds: string[];
 };
 
-function makeInitials(name: string): string {
+function makeInitials(name: string) {
   return name
     .split(" ")
     .map((w) => w[0] ?? "")
     .join("")
     .toUpperCase()
     .slice(0, 2);
-}
-
-// ─── Input ────────────────────────────────────────────────────────────────────
-
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={cn(
-        "w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-[#1F1F1F]",
-        "placeholder:text-gray-300",
-        "focus:outline-none focus:ring-2 focus:ring-[#1F1F1F]/10 focus:border-gray-400",
-        "transition-colors"
-      )}
-      {...props}
-    />
-  );
 }
 
 // ─── Empty form state ─────────────────────────────────────────────────────────
@@ -75,6 +62,11 @@ export default function StaffPage() {
     setForm({ name: member.name, role: member.role, serviceIds: [...member.serviceIds] });
     setErrors({});
     setDialogOpen(true);
+  }
+
+  function setFormField(key: keyof Omit<typeof EMPTY_FORM, "serviceIds">, value: string) {
+    setForm((f) => ({ ...f, [key]: value }));
+    setErrors((e) => { const next = { ...e }; delete next[key]; return next; });
   }
 
   function toggleService(id: string) {
@@ -152,7 +144,7 @@ export default function StaffPage() {
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
             {staff.map((member) => {
-              const memberServices = SERVICES.filter((s) => member.serviceIds.includes(s.id));
+              const memberServices = member.serviceIds.map((id) => SERVICE_MAP[id]).filter(Boolean);
               return (
                 <div
                   key={member.id}
@@ -249,7 +241,7 @@ export default function StaffPage() {
               <Input
                 placeholder="Emma Rose"
                 value={form.name}
-                onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); setErrors({}); }}
+                onChange={(e) => setFormField("name", e.target.value)}
                 autoFocus
               />
               {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
@@ -260,7 +252,7 @@ export default function StaffPage() {
               <Input
                 placeholder="e.g. Senior Stylist, Color Specialist"
                 value={form.role}
-                onChange={(e) => { setForm((f) => ({ ...f, role: e.target.value })); setErrors({}); }}
+                onChange={(e) => setFormField("role", e.target.value)}
               />
               {errors.role && <p className="mt-1 text-xs text-red-500">{errors.role}</p>}
             </div>
@@ -293,11 +285,7 @@ export default function StaffPage() {
                           checked ? "bg-[#1F1F1F] border-[#1F1F1F]" : "border-gray-300"
                         )}
                       >
-                        {checked && (
-                          <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
-                            <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
+                        {checked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={2.5} />}
                       </div>
                       <span className="text-sm text-[#1F1F1F] flex-1">{svc.name}</span>
                       <span className="text-xs text-gray-400">${svc.price}</span>

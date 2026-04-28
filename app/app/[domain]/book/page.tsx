@@ -4,11 +4,14 @@ import { use, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Check, Clock, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, fmtDuration } from "@/lib/utils";
 import { SERVICES, STAFF } from "@/lib/mock-data";
-import { TRANSLATIONS, type Lang } from "@/lib/i18n";
+import { TRANSLATIONS, LANG_LOCALE, type Lang } from "@/lib/i18n";
 
-// ─── Mock availability ────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TODAY = new Date();
+TODAY.setHours(0, 0, 0, 0);
 
 const TIME_SLOTS = [
   "9:00", "9:30", "10:00", "10:30", "11:00", "11:30",
@@ -17,15 +20,6 @@ const TIME_SLOTS = [
 ];
 
 const BOOKED_SLOTS = new Set(["10:30", "12:00", "14:00", "15:30"]);
-
-// ─── Duration formatter ───────────────────────────────────────────────────────
-
-function fmtDuration(mins: number, minLabel: string) {
-  if (mins < 60) return `${mins} ${minLabel}`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m ? `${h}h ${m} ${minLabel}` : `${h}h`;
-}
 
 // ─── Step Indicator ───────────────────────────────────────────────────────────
 
@@ -126,9 +120,6 @@ export default function BookPage({
   const [selectedDate, setSelectedDate]       = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime]       = useState<string | null>(null);
   const [showEligible, setShowEligible]       = useState(false);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   const chosenService = SERVICES.find((s) => s.id === selectedService);
   const chosenStaff   = selectedStaff === "any"
@@ -316,7 +307,7 @@ export default function BookPage({
                 return (
                   <button
                     key={member.id}
-                    onClick={() => setSelectedStaff(member.id)}
+                    onClick={() => { setSelectedStaff(member.id); setShowEligible(false); }}
                     className={cn(
                       "relative flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-150",
                       isSelected
@@ -358,7 +349,7 @@ export default function BookPage({
                   mode="single"
                   selected={selectedDate}
                   onSelect={(date) => { setSelectedDate(date); setSelectedTime(null); }}
-                  disabled={(date) => date < today}
+                  disabled={(date) => date < TODAY}
                   className="rounded-2xl border border-gray-200 p-3"
                 />
               </div>
@@ -414,7 +405,7 @@ export default function BookPage({
                     [t.labelStylist,  chosenStaff.name],
                     [
                       t.labelDate,
-                      selectedDate.toLocaleDateString(lang === "ka" ? "ka-GE" : "ru-RU", {
+                      selectedDate.toLocaleDateString(LANG_LOCALE[lang], {
                         weekday: "short",
                         month: "long",
                         day: "numeric",

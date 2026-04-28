@@ -91,3 +91,4 @@ const RU: Dict = {
 };
 
 export const TRANSLATIONS: Record<Lang, Dict> = { ka: KA, ru: RU };
+export const LANG_LOCALE: Record<Lang, string> = { ka: "ka-GE", ru: "ru-RU" };

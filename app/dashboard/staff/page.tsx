@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Trash2, CalendarDays, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,22 +12,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SERVICES, STAFF as INITIAL_STAFF_DATA } from "@/lib/mock-data";
 
-// ─── Types & mock data ────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type StaffMember = {
   id: string;
   name: string;
   role: string;
   initials: string;
+  serviceIds: string[];
 };
-
-const INITIAL_STAFF: StaffMember[] = [
-  { id: "1", name: "Emma Rose",     role: "Senior Stylist",   initials: "ER" },
-  { id: "2", name: "Marcus Chen",   role: "Color Specialist", initials: "MC" },
-  { id: "3", name: "Sofia Laurent", role: "Master Stylist",   initials: "SL" },
-  { id: "4", name: "Aria Kim",      role: "Texture Expert",   initials: "AK" },
-];
 
 function makeInitials(name: string): string {
   return name
@@ -54,29 +49,62 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
+// ─── Empty form state ─────────────────────────────────────────────────────────
+
+const EMPTY_FORM = { name: "", role: "", serviceIds: [] as string[] };
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StaffPage() {
-  const [staff, setStaff]             = useState<StaffMember[]>(INITIAL_STAFF);
-  const [dialogOpen, setDialogOpen]   = useState(false);
-  const [confirmId, setConfirmId]     = useState<string | null>(null);
-  const [name, setName]               = useState("");
-  const [role, setRole]               = useState("");
-  const [errors, setErrors]           = useState<Record<string, string>>({});
+  const [staff, setStaff]           = useState<StaffMember[]>(INITIAL_STAFF_DATA);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [confirmId, setConfirmId]   = useState<string | null>(null);
+  const [form, setForm]             = useState(EMPTY_FORM);
+  const [errors, setErrors]         = useState<Record<string, string>>({});
 
-  function handleAdd() {
+  function openAdd() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setErrors({});
+    setDialogOpen(true);
+  }
+
+  function openEdit(member: StaffMember) {
+    setEditingId(member.id);
+    setForm({ name: member.name, role: member.role, serviceIds: [...member.serviceIds] });
+    setErrors({});
+    setDialogOpen(true);
+  }
+
+  function toggleService(id: string) {
+    setForm((f) => ({
+      ...f,
+      serviceIds: f.serviceIds.includes(id)
+        ? f.serviceIds.filter((s) => s !== id)
+        : [...f.serviceIds, id],
+    }));
+  }
+
+  function handleSave() {
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = "Name is required.";
-    if (!role.trim()) errs.role = "Role is required.";
+    if (!form.name.trim()) errs.name = "Name is required.";
+    if (!form.role.trim()) errs.role = "Role is required.";
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    setStaff((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), name: name.trim(), role: role.trim(), initials: makeInitials(name) },
-    ]);
-    setName("");
-    setRole("");
-    setErrors({});
+    const entry: StaffMember = {
+      id:         editingId ?? crypto.randomUUID(),
+      name:       form.name.trim(),
+      role:       form.role.trim(),
+      initials:   makeInitials(form.name.trim()),
+      serviceIds: form.serviceIds,
+    };
+
+    setStaff((prev) =>
+      editingId
+        ? prev.map((s) => (s.id === editingId ? entry : s))
+        : [...prev, entry]
+    );
     setDialogOpen(false);
   }
 
@@ -84,6 +112,8 @@ export default function StaffPage() {
     setStaff((prev) => prev.filter((s) => s.id !== id));
     setConfirmId(null);
   }
+
+  const dialogTitle = editingId ? "Edit team member" : "Add a team member";
 
   return (
     <div className="h-full overflow-auto bg-white">
@@ -100,7 +130,7 @@ export default function StaffPage() {
             </h1>
           </div>
           <Button
-            onClick={() => { setErrors({}); setName(""); setRole(""); setDialogOpen(true); }}
+            onClick={openAdd}
             className="bg-[#1F1F1F] hover:bg-[#333] text-white rounded-xl gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -113,7 +143,7 @@ export default function StaffPage() {
           <div className="flex flex-col items-center justify-center h-48 rounded-2xl border border-dashed border-gray-200">
             <p className="text-sm text-gray-400">No staff members yet.</p>
             <button
-              onClick={() => setDialogOpen(true)}
+              onClick={openAdd}
               className="mt-2 text-sm font-medium text-[#1F1F1F] hover:underline underline-offset-2"
             >
               Add your first team member →
@@ -121,115 +151,172 @@ export default function StaffPage() {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
-            {staff.map((member) => (
-              <div
-                key={member.id}
-                className="flex flex-col rounded-2xl border border-gray-100 bg-white p-5 group"
-              >
-                {/* Avatar + name */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-xs font-semibold shrink-0">
-                    {member.initials}
+            {staff.map((member) => {
+              const memberServices = SERVICES.filter((s) => member.serviceIds.includes(s.id));
+              return (
+                <div
+                  key={member.id}
+                  className="flex flex-col rounded-2xl border border-gray-100 bg-white p-5 group"
+                >
+                  {/* Avatar + name */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                      {member.initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#1F1F1F] truncate">{member.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{member.role}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#1F1F1F] truncate">
-                      {member.name}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">{member.role}</p>
-                  </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 mt-auto pt-4 border-t border-gray-100">
-                  <Link
-                    href={`/dashboard/staff/${member.id}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:border-gray-400 hover:text-[#1F1F1F] transition-colors"
-                  >
-                    <CalendarDays className="w-3.5 h-3.5" />
-                    Schedule
-                  </Link>
-
-                  {confirmId === member.id ? (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => setConfirmId(null)}
-                        className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleRemove(member.id)}
-                        className="rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white hover:bg-red-600 transition-colors"
-                      >
-                        Confirm
-                      </button>
+                  {/* Services */}
+                  {memberServices.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {memberServices.map((s) => (
+                        <span
+                          key={s.id}
+                          className="inline-block rounded-lg bg-gray-50 border border-gray-100 px-2 py-0.5 text-[11px] text-gray-500"
+                        >
+                          {s.name}
+                        </span>
+                      ))}
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setConfirmId(member.id)}
-                      className="rounded-lg border border-gray-200 p-2 text-gray-400 hover:border-red-200 hover:text-red-400 transition-colors"
-                      aria-label="Remove staff member"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <p className="text-[11px] text-gray-300 mb-4">No services assigned</p>
                   )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 mt-auto pt-4 border-t border-gray-100">
+                    <Link
+                      href={`/dashboard/staff/${member.id}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:border-gray-400 hover:text-[#1F1F1F] transition-colors"
+                    >
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      Schedule
+                    </Link>
+
+                    {confirmId === member.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setConfirmId(null)}
+                          className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleRemove(member.id)}
+                          className="rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white hover:bg-red-600 transition-colors"
+                        >
+                          Confirm
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => openEdit(member)}
+                          className="rounded-lg border border-gray-200 p-2 text-gray-400 hover:border-gray-400 hover:text-[#1F1F1F] transition-colors"
+                          aria-label="Edit staff member"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmId(member.id)}
+                          className="rounded-lg border border-gray-200 p-2 text-gray-400 hover:border-red-200 hover:text-red-400 transition-colors"
+                          aria-label="Remove staff member"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Add staff dialog */}
+      {/* Add / Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>Add a team member</DialogTitle>
+            <DialogTitle>{dialogTitle}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-1">
             <div>
-              <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">
-                Full name
-              </label>
+              <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">Full name</label>
               <Input
                 placeholder="Emma Rose"
-                value={name}
-                onChange={(e) => { setName(e.target.value); setErrors({}); }}
+                value={form.name}
+                onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); setErrors({}); }}
                 autoFocus
               />
-              {errors.name && (
-                <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-              )}
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">
-                Role / title
-              </label>
+              <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">Role / title</label>
               <Input
                 placeholder="e.g. Senior Stylist, Color Specialist"
-                value={role}
-                onChange={(e) => { setRole(e.target.value); setErrors({}); }}
+                value={form.role}
+                onChange={(e) => { setForm((f) => ({ ...f, role: e.target.value })); setErrors({}); }}
               />
-              {errors.role && (
-                <p className="mt-1 text-xs text-red-500">{errors.role}</p>
-              )}
+              {errors.role && <p className="mt-1 text-xs text-red-500">{errors.role}</p>}
+            </div>
+
+            {/* Service assignment */}
+            <div>
+              <label className="block text-xs font-medium text-[#1F1F1F] mb-2">Services</label>
+              <div className="space-y-1.5">
+                {SERVICES.map((svc) => {
+                  const checked = form.serviceIds.includes(svc.id);
+                  return (
+                    <label
+                      key={svc.id}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl border px-3 py-2.5 cursor-pointer transition-colors",
+                        checked
+                          ? "border-[#1F1F1F] bg-gray-50"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleService(svc.id)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={cn(
+                          "w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors",
+                          checked ? "bg-[#1F1F1F] border-[#1F1F1F]" : "border-gray-300"
+                        )}
+                      >
+                        {checked && (
+                          <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-sm text-[#1F1F1F] flex-1">{svc.name}</span>
+                      <span className="text-xs text-gray-400">${svc.price}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setDialogOpen(false)}
-              className="text-gray-500"
-            >
+            <Button variant="ghost" onClick={() => setDialogOpen(false)} className="text-gray-500">
               Cancel
             </Button>
             <Button
-              onClick={handleAdd}
+              onClick={handleSave}
               className="bg-[#1F1F1F] hover:bg-[#333] text-white rounded-xl"
             >
-              Add member
+              {editingId ? "Save changes" : "Add member"}
             </Button>
           </DialogFooter>
         </DialogContent>

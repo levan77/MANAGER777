@@ -11,23 +11,27 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { STAFF } from "@/lib/mock-data";
 
-// ─── Types & mock data ────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Service = {
   id: string;
   name: string;
   duration_minutes: number;
   price: number;
+  staffIds: string[];
 };
 
+// ─── Initial data (derived from shared mock-data) ─────────────────────────────
+
 const INITIAL_SERVICES: Service[] = [
-  { id: "1", name: "Haircut & Style",     duration_minutes: 45,  price: 65  },
-  { id: "2", name: "Balayage",            duration_minutes: 150, price: 180 },
-  { id: "3", name: "Deep Conditioning",   duration_minutes: 30,  price: 45  },
-  { id: "4", name: "Blow Dry & Style",    duration_minutes: 45,  price: 55  },
-  { id: "5", name: "Color Touch-Up",      duration_minutes: 60,  price: 85  },
-  { id: "6", name: "Keratin Treatment",   duration_minutes: 120, price: 220 },
+  { id: "1", name: "Haircut & Style",   duration_minutes: 45,  price: 65,  staffIds: ["1", "3"] },
+  { id: "2", name: "Balayage",          duration_minutes: 150, price: 180, staffIds: ["2", "3"] },
+  { id: "3", name: "Deep Conditioning", duration_minutes: 30,  price: 45,  staffIds: ["1", "3", "4"] },
+  { id: "4", name: "Blow Dry & Style",  duration_minutes: 45,  price: 55,  staffIds: ["1", "3", "4"] },
+  { id: "5", name: "Color Touch-Up",    duration_minutes: 60,  price: 85,  staffIds: ["2", "3"] },
+  { id: "6", name: "Keratin Treatment", duration_minutes: 120, price: 220, staffIds: ["1", "2", "3", "4"] },
 ];
 
 function fmtDuration(mins: number): string {
@@ -55,17 +59,17 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 
 // ─── Empty form state ─────────────────────────────────────────────────────────
 
-const EMPTY = { name: "", duration_minutes: "", price: "" };
+const EMPTY = { name: "", duration_minutes: "", price: "", staffIds: [] as string[] };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ServicesPage() {
-  const [services, setServices]       = useState<Service[]>(INITIAL_SERVICES);
-  const [dialogOpen, setDialogOpen]   = useState(false);
-  const [editingId, setEditingId]     = useState<string | null>(null);
-  const [confirmId, setConfirmId]     = useState<string | null>(null);
-  const [form, setForm]               = useState(EMPTY);
-  const [errors, setErrors]           = useState<Record<string, string>>({});
+  const [services, setServices]     = useState<Service[]>(INITIAL_SERVICES);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [confirmId, setConfirmId]   = useState<string | null>(null);
+  const [form, setForm]             = useState(EMPTY);
+  const [errors, setErrors]         = useState<Record<string, string>>({});
 
   function openAdd() {
     setEditingId(null);
@@ -77,9 +81,10 @@ export default function ServicesPage() {
   function openEdit(svc: Service) {
     setEditingId(svc.id);
     setForm({
-      name: svc.name,
+      name:             svc.name,
       duration_minutes: String(svc.duration_minutes),
-      price: String(svc.price),
+      price:            String(svc.price),
+      staffIds:         [...svc.staffIds],
     });
     setErrors({});
     setDialogOpen(true);
@@ -90,14 +95,24 @@ export default function ServicesPage() {
     setErrors((e) => { const next = { ...e }; delete next[key]; return next; });
   }
 
+  function toggleStaff(id: string) {
+    setForm((f) => ({
+      ...f,
+      staffIds: f.staffIds.includes(id)
+        ? f.staffIds.filter((s) => s !== id)
+        : [...f.staffIds, id],
+    }));
+  }
+
   function validate(): Record<string, string> {
     const errs: Record<string, string> = {};
-    if (!form.name.trim())                       errs.name             = "Name is required.";
+    if (!form.name.trim()) errs.name = "Name is required.";
     const dur = Number(form.duration_minutes);
     if (!form.duration_minutes || isNaN(dur) || dur <= 0)
-                                                 errs.duration_minutes = "Enter a valid duration (minutes).";
+      errs.duration_minutes = "Enter a valid duration (minutes).";
     const price = Number(form.price);
-    if (!form.price || isNaN(price) || price < 0) errs.price           = "Enter a valid price.";
+    if (!form.price || isNaN(price) || price < 0)
+      errs.price = "Enter a valid price.";
     return errs;
   }
 
@@ -106,10 +121,11 @@ export default function ServicesPage() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     const entry: Service = {
-      id: editingId ?? crypto.randomUUID(),
-      name: form.name.trim(),
+      id:               editingId ?? crypto.randomUUID(),
+      name:             form.name.trim(),
       duration_minutes: Number(form.duration_minutes),
-      price: Number(Number(form.price).toFixed(2)),
+      price:            Number(Number(form.price).toFixed(2)),
+      staffIds:         form.staffIds,
     };
 
     setServices((prev) =>
@@ -137,9 +153,7 @@ export default function ServicesPage() {
             <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-gray-400 mb-1">
               Management
             </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-[#1F1F1F]">
-              Services
-            </h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1F1F1F]">Services</h1>
           </div>
           <Button
             onClick={openAdd}
@@ -163,67 +177,78 @@ export default function ServicesPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
-            {services.map((svc) => (
-              <div
-                key={svc.id}
-                className="flex items-center gap-4 px-5 py-4 bg-white group"
-              >
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#1F1F1F] truncate">
-                    {svc.name}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="flex items-center gap-1 text-xs text-gray-400">
-                      <Clock className="w-3 h-3" />
-                      {fmtDuration(svc.duration_minutes)}
-                    </span>
+            {services.map((svc) => {
+              const assignedStaff = STAFF.filter((s) => svc.staffIds.includes(s.id));
+              return (
+                <div key={svc.id} className="flex items-center gap-4 px-5 py-4 bg-white group">
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#1F1F1F] truncate">{svc.name}</p>
+                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <Clock className="w-3 h-3" />
+                        {fmtDuration(svc.duration_minutes)}
+                      </span>
+                      {assignedStaff.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          {assignedStaff.map((s) => (
+                            <span
+                              key={s.id}
+                              title={s.name}
+                              className="w-5 h-5 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-[9px] font-semibold"
+                            >
+                              {s.initials}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <span className="text-sm font-semibold text-[#1F1F1F] tabular-nums shrink-0">
+                    ${svc.price.toFixed(2)}
+                  </span>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {confirmId === svc.id ? (
+                      <>
+                        <button
+                          onClick={() => setConfirmId(null)}
+                          className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleRemove(svc.id)}
+                          className="rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-600 transition-colors"
+                        >
+                          Confirm
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => openEdit(svc)}
+                          className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:border-gray-400 hover:text-[#1F1F1F] transition-colors opacity-0 group-hover:opacity-100"
+                          aria-label="Edit service"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmId(svc.id)}
+                          className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:border-red-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                          aria-label="Remove service"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
-
-                {/* Price */}
-                <span className="text-sm font-semibold text-[#1F1F1F] tabular-nums shrink-0">
-                  ${svc.price.toFixed(2)}
-                </span>
-
-                {/* Actions */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {confirmId === svc.id ? (
-                    <>
-                      <button
-                        onClick={() => setConfirmId(null)}
-                        className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleRemove(svc.id)}
-                        className="rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-600 transition-colors"
-                      >
-                        Confirm
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => openEdit(svc)}
-                        className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:border-gray-400 hover:text-[#1F1F1F] transition-colors opacity-0 group-hover:opacity-100"
-                        aria-label="Edit service"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => { setConfirmId(svc.id); }}
-                        className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:border-red-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                        aria-label="Remove service"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -238,26 +263,20 @@ export default function ServicesPage() {
           <div className="space-y-4 py-1">
             {/* Name */}
             <div>
-              <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">
-                Service name
-              </label>
+              <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">Service name</label>
               <Input
                 placeholder="e.g. Balayage"
                 value={form.name}
                 onChange={(e) => setField("name", e.target.value)}
                 autoFocus
               />
-              {errors.name && (
-                <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-              )}
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
             </div>
 
             {/* Duration + Price side by side */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">
-                  Duration (minutes)
-                </label>
+                <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">Duration (min)</label>
                 <Input
                   type="number"
                   min={5}
@@ -271,9 +290,7 @@ export default function ServicesPage() {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">
-                  Price ($)
-                </label>
+                <label className="block text-xs font-medium text-[#1F1F1F] mb-1.5">Price ($)</label>
                 <Input
                   type="number"
                   min={0}
@@ -282,19 +299,60 @@ export default function ServicesPage() {
                   value={form.price}
                   onChange={(e) => setField("price", e.target.value)}
                 />
-                {errors.price && (
-                  <p className="mt-1 text-xs text-red-500">{errors.price}</p>
-                )}
+                {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
+              </div>
+            </div>
+
+            {/* Staff assignment */}
+            <div>
+              <label className="block text-xs font-medium text-[#1F1F1F] mb-2">Specialists</label>
+              <div className="space-y-1.5">
+                {STAFF.map((member) => {
+                  const checked = form.staffIds.includes(member.id);
+                  return (
+                    <label
+                      key={member.id}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl border px-3 py-2 cursor-pointer transition-colors",
+                        checked
+                          ? "border-[#1F1F1F] bg-gray-50"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleStaff(member.id)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={cn(
+                          "w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors",
+                          checked ? "bg-[#1F1F1F] border-[#1F1F1F]" : "border-gray-300"
+                        )}
+                      >
+                        {checked && (
+                          <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-[#1F1F1F] text-white flex items-center justify-center text-[10px] font-semibold shrink-0">
+                        {member.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#1F1F1F]">{member.name}</p>
+                        <p className="text-xs text-gray-400">{member.role}</p>
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setDialogOpen(false)}
-              className="text-gray-500"
-            >
+            <Button variant="ghost" onClick={() => setDialogOpen(false)} className="text-gray-500">
               Cancel
             </Button>
             <Button
